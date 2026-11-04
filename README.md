@@ -1,42 +1,65 @@
-# Template DataForGood
+# Soutien aux libertés associatives
 
-This file will become your README and also the index of your
-documentation.
+Site WordPress qui référence une bibliothèque de ressources (articles, liens externes, vidéos).
 
-# Contributing
+Stack : [Bedrock](https://roots.io/bedrock/) · ACF Pro · [Timber 2](https://timber.github.io/docs/v2/) (templates Twig) · [DDEV](https://ddev.com/) en local.
 
+## Prérequis
 
-## Installation
+- Docker Desktop ou OrbStack
+- DDEV (`brew install ddev/ddev/ddev`), puis `mkcert -install` une fois pour le HTTPS local
+- Une clé de licence ACF Pro
 
-- [Installation de Python](#installation-de-python)
-
-Ce projet utilise [uv](https://docs.astral.sh/uv/) pour la gestion des dépendances Python. Il est préréquis pour l'installation de ce projet.
-
-Une fois installé, il suffit de lancer la commande suivante pour installer la version de Python adéquate, créer un environnement virtuel et installer les dépendances du projet.
+## Installation locale
 
 ```bash
-uv sync
+# 1. Variables d'environnement
+cp .env.example .env
+#    puis dans .env :
+#    DB_NAME='db'  DB_USER='db'  DB_PASSWORD='db'  DB_HOST='db'
+#    WP_HOME="${DDEV_PRIMARY_URL}"
+#    et générer les clés : https://roots.io/salts.html
+
+# 2. Accès Composer à ACF Pro (fichier non versionné)
+cat > auth.json <<'JSON'
+{
+  "http-basic": {
+    "connect.advancedcustomfields.com": {
+      "username": "VOTRE_CLE_ACF_PRO",
+      "password": "https://soutient-aux-libertes-associatives.ddev.site"
+    }
+  }
+}
+JSON
+
+# 3. Démarrage
+ddev start
+ddev composer install
+ddev wp core install --url="$(ddev exec 'echo $DDEV_PRIMARY_URL')" \
+  --title="Soutien aux libertés associatives" \
+  --admin_user=admin --admin_password=admin --admin_email=admin@example.test --skip-email
+ddev wp language core install fr_FR --activate
+ddev wp theme activate libertes-associatives
+ddev launch wp/wp-admin
 ```
 
-A l'usage, si vous utilisez VSCode, l'environnement virtuel sera automatiquement activé lorsque vous ouvrirez le projet. Sinon, il suffit de l'activer manuellement avec la commande suivante :
+## Structure
 
-```bash
-source .venv/bin/activate
+```
+config/                  Configuration WordPress (par environnement)
+web/app/themes/libertes-associatives/
+  functions.php          Initialisation de Timber, supports du thème
+  index.php              Contrôleurs PHP (préparent le contexte)
+  templates/             Vues Twig
+web/app/plugins/         Plugins installés via Composer (non versionnés)
+web/wp/                  Cœur WordPress (non versionné)
 ```
 
-Ou alors, utilisez la commande `uv run ...` (au lieu de `python ...`) pour lancer un script Python. Par exemple:
+## Commandes utiles
 
-```bash
-uv run pipelines/run.py run build_database
-```
-
-
-## Lancer les precommit-hook localement
-
-[Installer les precommit](https://pre-commit.com/)
-
-    pre-commit run --all-files
-
-## Utiliser Tox pour tester votre code
-
-    tox -vv
+| Commande | Rôle |
+|---|---|
+| `ddev composer require wp-plugin/<slug>` | Ajouter un plugin de wordpress.org |
+| `ddev wp ...` | WP-CLI |
+| `ddev composer lint` | Vérifier le style PHP (Pint) |
+| `ddev composer test` | Tests (Pest) |
