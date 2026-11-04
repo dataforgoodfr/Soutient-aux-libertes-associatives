@@ -1,0 +1,12 @@
+<!doctype html>
+<html {{ site.language_attributes }}>
+<head>
+  <meta charset="{{ site.charset }}">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  {{ function('wp_head') }}
+</head>
+<body class="{{ body_class }}">
+  {{ function('wp_body_open') }}
+  {{ function('wp_footer') }}
+</body>
+</html>
